@@ -18,8 +18,8 @@ venv/
 *.swp
 
 # Raw data (don't commit full datasets)
-data/raw/
 data/raw/*
+!data/raw/.keep
 
 # Archives
 *.zip
