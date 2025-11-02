@@ -1,0 +1,27 @@
+# Python cache / bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments / secrets
+.env
+.env.*
+venv/
+.venv/
+
+# OS/editor junk
+.DS_Store
+*.swp
+
+# Raw data (don't commit full datasets)
+data/raw/
+data/raw/*
+
+# Archives
+*.zip
+*.gz
+
