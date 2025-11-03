@@ -22,10 +22,8 @@ cmse492_project/
 └── reports/                # LaTeX project proposal and final report
 
 ## Setup Instructions
-1. Create and activate a virtual environment:
-```bash
-python -m venv venv
-# macOS / Linux:
-source venv/bin/activate
-# Windows PowerShell:
-venv\Scripts\Activate.ps1
+
+### 1. Clone the repository
+git clone https://github.com/JakeRoll04/cmse492_project.git
+cd cmse492_project
+
