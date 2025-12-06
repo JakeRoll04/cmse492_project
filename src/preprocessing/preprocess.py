@@ -48,6 +48,10 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df_clean["income_binary"] = (df_clean["income"] == ">50K").astype(int)
 
+    df_clean = df_clean.drop(columns=["income"])
+
+    df_clean = pd.get_dummies(df_clean, drop_first=True)
+
     return df_clean
 
 def train_val_test_split(df: pd.DataFrame, test_size=0.2, val_size=0.1, random_state=42):

@@ -1,0 +1,5 @@
+model,split,accuracy
+Majority Class,val,0.7592137592137592
+Logistic Regression,val,0.8455159705159705
+Random Forest,val,0.8535012285012284
+Gradient Boosting,val,0.8707002457002457

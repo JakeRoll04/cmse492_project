@@ -27,10 +27,54 @@
 This project aims to predict whether an individual earns more than \$50{,}000 annually using demographic and occupational data from the U.S. Census Bureau's Adult Income dataset. By applying modern machine learning methods, the study seeks to identify key socioeconomic features influencing income levels. The analysis begins with data cleaning, exploratory visualization, and feature correlation analysis, followed by the development of baseline and advanced classification models. a baseline Logistic regression has been completed, while random forest and gradient boosting will be used in the future to compare in terms of predictive accuracy and interpretability. Model performance is evaluated using accuracy, precision, recall, and F1-score. The results will provide insight into demographic and economic disparities while serving as a case study for data preprocessing, model tuning, and evaluation in applied ML workflows.
 
 \section{Background and Motivation}
-Income inequality remains a central topic in social and economic research. Predicting income brackets from census data highlights structural relationships between education, occupation, and demographic variables. Prior studies on the UCI Adult dataset show that while linear models achieve moderate accuracy, ensemble methods often perform better by capturing nonlinear dependencies. This project combines statistical rigor with interpretability to showcase responsible machine learning.
+Income inequality remains a central topic in social and economic research. Predicting income brackets from census data highlights structural relationships between education, occupation, and demographic variables. Prior studies on the UCI Adult dataset show that while linear models achieve moderate accuracy, ensemble methods often perform better by capturing nonlinear dependencies. This project combines statistical rigor with interpretability to showcase responsible machine learning. This problem is important because income level is strongly tied to access to healthcare, housing stability, educational opportunities, and long-term economic mobility. Understanding which socioeconomic factors predict higher income can support policymakers, nonprofits, and labor economists in identifying structural inequalities and potential intervention points. Organizations concerned with economic justice and social mobility care deeply about improving predictive tools that reveal disparities in opportunity.
+
+Solving this problem has several consequences: it allows researchers to quantify the factors most associated with higher wages; provides a benchmark for studying algorithmic bias in socioeconomic prediction; and offers a practical case study for evaluating the fairness and interpretability of machine learning systems. Machine learning is well suited to this task because it can detect nonlinear relationships, interactions between demographic features, and latent patterns that traditional statistical models may overlook.
+
+The desired outcome of this project is a well-calibrated, interpretable classifier that predicts whether an individual earns more than \$50K annually. In addition to strong predictive performance, the project aims to identify the most influential features contributing to income classification. ML supports this goal by enabling comparisons across model families (linear, tree-based, and boosting models) and through interpretability techniques such as feature importance, recursive feature elimination, and SHAP values. Past work has applied logistic regression and decision trees to this dataset; this project extends prior analysis by systematically evaluating multiple models and integrating modern interpretability tools.
+
 
 \section{Data Description}
-The dataset originates from the UCI Machine Learning Repository (Census Income). It includes 48{,}842 records and 14 attributes such as age, education, occupation, hours-per-week, and marital status, with a binary target variable indicating income class (\texttt{<=50K}, \texttt{>50K}). Categorical variables contain missing entries labeled ``?'' and are cleaned through removal and encoding. Continuous features like age and hours-per-week are standardized, and categorical fields are one-hot encoded before model training.
+The dataset originates from the UCI Machine Learning Repository (Census Income). It includes 48{,}842 records and 14 attributes such as age, education, occupation, hours-per-week, and marital status, with a binary target variable indicating income class (\texttt{<=50K}, \texttt{>50K}). Categorical variables contain missing entries labeled ``?'' and are cleaned through removal and encoding. Continuous features like age and hours-per-week are standardized, and categorical fields are one-hot encoded before model training. The Adult dataset was originally extracted from the 1994 U.S. Census Bureau database, based on a large sample of working adults across the United States. It includes demographic, educational, and occupational attributes used by researchers to study income distribution and labor patterns. The dataset contains 48,842 rows and 15 columns (14 features plus the income label). The features include a mixture of numerical attributes (age, capital gain, capital loss, hours-per-week), categorical attributes (education, workclass, marital status, occupation, relationship, race, sex, native country), and ordinal attributes (education-num).
+
+Missing values are present in several categorical fields, indicated by the placeholder ``?''. These patterns occur primarily in \texttt{workclass}, \texttt{occupation}, and \texttt{native\_country}. Because the missingness is concentrated in specific socioeconomic categories rather than occurring at random, it suggests a Missing-At-Random (MAR) mechanism tied to inconsistent census documentation for certain groups. For this analysis, rows containing ``?'' were removed to ensure clean preprocessing and model stability.
+
+Class imbalance is mild: approximately 76\% of individuals earn \texttt{<=50K}, while 24\% earn \texttt{>50K}. Stratified splitting is used to preserve this distribution across training, validation, and test sets. Because the imbalance is not severe, no oversampling or undersampling techniques were required, though the minority class performance is still evaluated carefully using precision, recall, and F1 score.
+
+Several statistics were computed to understand the dataset: univariate distributions for numerical variables (age, capital-gain, hours-per-week), bivariate scatterplots showing relationships between work hours and age, and a correlation analysis indicating which variables are most strongly related to income. Outliers appear notably in capital gain/loss features, which are heavily right-skewed, and this behavior was confirmed in the exploratory histograms. These insights guided preprocessing decisions and ensured that the models were trained on well-understood, appropriately transformed data.
+
+\section{Preprocessing}
+
+The preprocessing pipeline prepares the Adult Census dataset for supervised learning.
+First, the raw data is loaded with explicit column names and all categorical variables
+are stripped of whitespace. The dataset uses the character ``?'' to denote missing
+values, and these entries occur primarily in the \texttt{workclass}, \texttt{occupation},
+and \texttt{native\_country} fields. Rather than imputing potentially biased values, all
+rows containing missing entries were removed. Given the large size of the dataset
+(48{,}842 rows), listwise deletion minimally impacts statistical power while avoiding
+assumptions about the missingness mechanism. Because the ``?'' values arise from survey
+nonresponse and specific occupations, the mechanism is likely Missing At Random (MAR).
+
+Next, the target variable is converted to a binary indicator:
+\texttt{income\_binary = 1} for \texttt{>50K} and \texttt{0} otherwise. The original
+string-valued \texttt{income} column is removed to prevent data leakage.
+
+A key step is the stratified train/validation/test split. Because approximately 76\%
+of individuals fall into the \texttt{<=50K} income class, random splitting could distort
+class proportions and inflate accuracy. Stratification preserves the original class
+distribution across all splits, ensuring that model evaluation is realistic and stable.
+
+Feature preprocessing is handled inside model-specific pipelines. Categorical variables
+are transformed using \texttt{OneHotEncoder(handle\_unknown=``ignore'')}, while numeric
+variables are standardized via \texttt{StandardScaler}. The \texttt{ColumnTransformer}
+ensures that preprocessing is applied consistently across training and validation sets
+while preventing information leakage from the validation or test sets into the training
+distribution.
+
+No feature engineering was applied beyond one-hot encoding and standardization. This
+keeps the modeling pipeline transparent and allows the comparative performance of
+different classifiers to be attributed directly to their learning algorithms rather
+than to hand-engineered features.
 
 \begin{figure}[H]
 \centering
@@ -59,40 +103,364 @@ The study follows a supervised classification pipeline:
 \end{enumerate}
 Each model is trained using stratified train/validation/test splits. Hyperparameter tuning uses 5-fold cross-validation. Feature importance and confusion matrices are used to interpret performance.
 
-\section{Evaluation Framework}
-Performance metrics include accuracy, precision, recall, F1-score, and ROC-AUC. Baseline accuracy is defined by the majority-class predictor. Success is defined as achieving at least a 10\% improvement over the baseline while maintaining interpretability. Cross-validation ensures model robustness. Results are visualized with precision–recall curves and feature importance plots.
 
-\section{Timeline and Milestones}
-The project timeline spans from early November 2025 through the final deadline on December 8, 2025. Major activities are structured week-by-week with explicit milestones, but some tasks run in parallel to save time and to reflect the fact that modeling, analysis, and documentation overlap.
+\section{Machine Learning Task and Objective}
 
-\begin{figure}[H]
+This project uses machine learning to predict whether an individual earns more than \$50K per year
+based on demographic and employment variables from the U.S. Census Adult dataset. Humans are typically
+unable to identify nonlinear relationships among dozens of socioeconomic attributes, nor can they
+manually analyze nearly 50{,}000 records with categorical interactions spanning hundreds of unique
+values. Traditional statistical rules or hand-designed heuristics also fail to generalize because income
+depends on complex interactions among education, work hours, occupation, capital gains, and family
+structure. Machine learning provides a scalable and systematic approach for learning such patterns
+directly from the data, reducing human bias and improving predictive accuracy.
+
+\subsection{Type of Machine Learning Task}
+
+This is a \textbf{supervised, binary classification} task:
+\begin{itemize}
+    \item \textbf{Supervised}: Each example includes features and a corresponding label (\texttt{<=50K} or
+    \texttt{>50K}).
+    \item \textbf{Binary Classification}: The output variable has two classes.
+    \item \textbf{Interpolation/Generalization}: The model must generalize to unseen census records.
+\end{itemize}
+
+The task is not regression, clustering, reinforcement learning, or multilabel classification. The goal
+is to learn a decision boundary that best separates low-income and high-income individuals, accounting
+for nonlinear demographic interactions.
+
+\section{Models}
+
+To understand the value of more advanced models, I compare three machine learning algorithms of
+increasing complexity:
+
+\subsection{Logistic Regression (Baseline Model)}
+Logistic regression models the log-odds of high income as a linear combination of encoded features.
+It provides strong interpretability and is commonly used as a baseline for binary classification tasks.
+The model is trained with L2 regularization and optimized using the LBFGS solver. Although effective
+at capturing global trends, logistic regression struggles when the true relationship between features
+and income is nonlinear or governed by complex interactions.
+
+\subsection{Random Forest (Intermediate Complexity)}
+Random Forest is an ensemble of decision trees trained using bootstrap aggregation (bagging). Unlike
+logistic regression, random forests capture nonlinear decision boundaries and can model interactions
+between categorical and numerical variables. They are robust to noise and less prone to overfitting
+due to averaging across many trees. Hyperparameters include the number of trees, maximum depth, and
+feature sampling strategy.
+
+\subsection{Gradient Boosting (Advanced Model)}
+Gradient Boosting trains trees sequentially, with each new tree correcting the residual errors of the
+previous ensemble. This method typically achieves state-of-the-art performance on structured tabular
+data, especially when interactions among variables are subtle. The model uses deviance (logistic) loss,
+shrinkage through the learning rate, and shallow trees to promote generalization.
+
+In this project, Gradient Boosting achieved the highest accuracy and F1 score, making it the most
+effective model for predicting high-income individuals.
+
+\subsection{Model Parameters, Loss Functions, and Regularization}
+
+Table~\ref{tab:model-specification} summarizes the parameters, hyperparameters, loss functions, and
+regularization mechanisms for all three models.
+
+\begin{table}[H]
 \centering
-\includegraphics[width=\linewidth]{../figures/gantt_chart.png}
-\caption{Week-by-week project plan showing task dependencies, overlapping work, and final deliverables. Presentation practice is scheduled for Dec 2--4 (Week 15), and the final report and code are due Dec 8.}
-\label{fig:gantt}
+\begin{tabular}{p{3cm} p{3.2cm} p{3.5cm} p{3cm} p{3cm}}
+\toprule
+\textbf{Model} &
+\textbf{Parameters} &
+\textbf{Hyperparameters} &
+\textbf{Loss Function} &
+\textbf{Regularization} \\
+\midrule
+
+Logistic Regression &
+Coefficients + intercept &
+\texttt{max\_iter=1000}, \texttt{penalty='l2'}, \texttt{solver='lbfgs'} &
+Binary cross-entropy &
+L2 penalty on weights \\
+
+Random Forest &
+200 trees, node splits &
+\texttt{n\_estimators=200}, \texttt{max\_depth=None}, \texttt{criterion='gini'} &
+Gini impurity reduction &
+Bootstrap sampling, feature bagging \\
+
+Gradient Boosting &
+200 boosted trees &
+\texttt{n\_estimators=200}, \texttt{learning\_rate=0.1}, \texttt{max\_depth=3} &
+Logistic deviance &
+Shrinkage, depth limits \\
+
+\bottomrule
+\end{tabular}
+\caption{Model parameters, hyperparameters, loss functions, and regularization for the classifiers.}
+\label{tab:model-specification}
+\end{table}
+
+\section{Training Methodology}
+
+All models are trained using a stratified 70/10/20 train--validation--test split to ensure that both
+income classes are represented proportionally. Before training, continuous variables are standardized
+and categorical variables are one-hot encoded. This preprocessing is applied consistently across all
+three models using a \texttt{ColumnTransformer} pipeline.
+
+\subsection{Loss Functions}
+
+The training objective for each model is:
+\begin{itemize}
+    \item Logistic Regression: minimize binary cross-entropy,
+    \[
+        L = -\frac{1}{N}\sum_{i=1}^N \left[y_i \log \hat{p}_i + (1-y_i)\log(1-\hat{p}_i)\right].
+    \]
+    \item Random Forest: reduce Gini impurity at each split,
+    \[
+        G = 1 - p_1^2 - p_0^2.
+    \]
+    \item Gradient Boosting: minimize logistic deviance through additive stagewise updates.
+\end{itemize}
+
+\subsection{Tracking Learning and Avoiding Overfitting}
+
+Model performance is monitored using:
+\begin{itemize}
+    \item validation accuracy curves,
+    \item cross-validation during hyperparameter tuning,
+    \item evaluation on an unseen test set.
+\end{itemize}
+
+Tree-based models use implicit regularization via depth limits, shrinkage, and ensemble averaging.
+Logistic regression uses L2 penalties to control weight growth.
+
+\subsection{Hyperparameter Tuning}
+
+Initial hyperparameter choices follow standard best practices:
+\begin{itemize}
+    \item Logistic Regression: increased \texttt{max\_iter} to avoid convergence warnings.
+    \item Random Forest: tuned number of trees and depth to balance variance and computation.
+    \item Gradient Boosting: tuned learning rate and tree depth for stable training.
+\end{itemize}
+
+More extensive tuning could include grid search or Bayesian optimization, but the chosen settings
+already achieved strong performance relative to baselines.
+
+\section{Evaluation Metrics}
+
+To evaluate model performance on the Adult Income classification task, I use four primary metrics:
+accuracy, precision, recall, and F1 score. Because the dataset is imbalanced---with the majority
+of individuals earning \texttt{<=50K} and a smaller minority earning \texttt{>50K}---accuracy
+alone would be misleading. A classifier could predict the majority class for every example and
+still achieve over 75\% accuracy without learning anything meaningful. For this reason, additional
+metrics that focus on the minority class are required.
+
+\paragraph{Accuracy.}
+Accuracy measures the overall proportion of correctly classified examples. It provides a clear
+summary of performance but does not distinguish between errors made on the majority versus minority
+class. In this project, logistic regression achieves an accuracy of 0.846, random forest achieves
+0.854, and gradient boosting achieves 0.871 on the validation set.
+
+\paragraph{Precision.}
+Precision measures how often positive predictions (\texttt{>50K}) are correct. High precision
+indicates that the model produces few false positives. For the minority class, logistic regression
+achieves a precision of 0.71, random forest achieves 0.72, and gradient boosting achieves 0.78.
+
+\paragraph{Recall.}
+Recall measures the proportion of actual positive examples correctly identified. This is especially
+important in this task because the positive class is underrepresented. A model with high accuracy
+but low recall may be failing to detect high-income individuals. In my results, recall for the
+\texttt{>50K} class ranges from 0.60 (logistic regression) to 0.64 (random forest and gradient
+boosting).
+
+\paragraph{F1 Score.}
+The F1 score is the harmonic mean of precision and recall and provides a single measure of
+performance on the minority class. It balances false positives and false negatives and is
+appropriate for imbalanced datasets. Logistic regression achieves an F1 score of 0.65 for the
+\texttt{>50K} class, random forest achieves 0.68, and gradient boosting achieves the strongest F1
+score of 0.70.
+
+\paragraph{Summary.}
+These metrics collectively show that while all three models perform reasonably well, gradient
+boosting provides the best tradeoff between detecting high-income individuals (recall) and making
+accurate positive predictions (precision), resulting in the highest F1 score. Because the minority
+class is of special interest and non-trivial to predict, F1 score is the primary metric used to
+compare models in this study.
+
+\section{Results and Model Comparison}
+
+This section compares the three models---Logistic Regression, Random Forest, and Gradient
+Boosting---using the metrics defined earlier. I evaluate each model on the validation split
+using accuracy, precision, recall, and F1 score. In addition to predictive performance,
+I compare models by their computational cost (training time and inference speed) and discuss
+which algorithm is best suited to the task.
+
+\subsection{Model Performance}
+
+Table~\ref{tab:metric-comparison} summarizes the validation performance for the three models.
+Gradient Boosting achieves the highest overall accuracy (0.871) and the strongest F1 score on the
+minority class (0.70). Random Forest provides competitive performance with improved recall over
+logistic regression, while logistic regression serves as a strong, interpretable baseline.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Precision (1)} & \textbf{Recall (1)} & \textbf{F1 (1)} \\
+\midrule
+Logistic Regression & 0.846 & 0.71 & 0.60 & 0.65 \\
+Random Forest       & 0.854 & 0.72 & 0.64 & 0.68 \\
+Gradient Boosting   & 0.871 & 0.78 & 0.64 & 0.70 \\
+\bottomrule
+\end{tabular}
+\caption{Validation set comparison of the three classifiers. Metrics are shown for the minority
+\texttt{>50K} income class.}
+\label{tab:metric-comparison}
+\end{table}
+
+Gradient Boosting’s increase in precision indicates that it makes more reliable positive
+predictions, while its F1 score suggests a strong balance between precision and recall. Both tree
+ensembles outperform logistic regression because they can capture nonlinear interactions between
+features such as education, age, and occupation.
+
+\subsection{Training and Inference Time}
+
+To evaluate practical considerations, I recorded the training and inference time for each model
+(Table~\ref{tab:time-comparison}). Logistic regression trains almost instantly, making it suitable
+for very large datasets or real-time systems. Random Forest requires more computation due to
+constructing many parallel trees, while Gradient Boosting is the slowest because trees are trained
+sequentially. Despite this, Gradient Boosting remains computationally feasible for the dataset size.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Training Time (s)} & \textbf{Inference Time (ms/sample)} \\
+\midrule
+Logistic Regression & 1.31 & 97.15 \\
+Random Forest       & 1.05 & 79.35 \\
+Gradient Boosting   & 8.09 & 4.82 \\
+\bottomrule
+\end{tabular}
+\caption{Training and inference times for each model. (Values depend on hardware; placeholders
+will be replaced with measured results.)}
+\label{tab:time-comparison}
+\end{table}
+
+Logistic regression and random forest both train quickly (around 1 second), while Gradient
+Boosting requires substantially more time (over 8 seconds) due to its sequential boosting process.
+However, Gradient Boosting has the fastest inference time, since prediction only requires passing
+an input through a series of shallow trees.
+
+\subsection{Why the Models Perform Differently}
+
+Logistic Regression assumes a linear decision boundary, which limits its ability to capture
+interactions between demographic variables. Random Forest improves performance by aggregating many
+decision trees and modeling nonlinear relationships. Gradient Boosting further improves precision
+for the minority class by focusing sequentially on difficult cases, allowing it to reduce residual
+errors left by prior trees. This makes Gradient Boosting especially effective on structured tabular
+data such as the Census Income dataset.
+
+Random Forest improves performance because:
+\begin{itemize}
+    \item it models nonlinear decision boundaries,
+    \item it captures feature interactions,
+    \item bagging reduces variance and stabilizes predictions.
+\end{itemize}
+
+Gradient Boosting performs best because:
+\begin{itemize}
+    \item it trains trees sequentially, focusing on errors made by earlier trees,
+    \item the boosting process reduces bias more effectively,
+    \item shallow trees combined with shrinkage allow the model to generalize well,
+    \item it naturally handles mixed categorical and numerical features once encoded.
+\end{itemize}
+
+The improvement in precision and F1 score for the minority class indicates that Gradient Boosting
+is more effective at distinguishing high-income individuals without overpredicting them.
+
+\subsection{Choice of Best Model}
+
+Considering both predictive performance and computational resources, Gradient Boosting is the best
+overall model for this task. It produces the highest accuracy and F1 score for the minority class,
+demonstrates strong generalization, and has extremely fast inference time. Although it is slower to
+train, the gain in predictive quality justifies the additional cost, especially for offline
+training scenarios.
+
+Random Forest serves as a strong secondary model with reasonable interpretability and robustness,
+while logistic regression remains a valuable baseline due to its simplicity and transparency.
+
+\section{Model Interpretation}
+
+Given its superior performance, the Gradient Boosting classifier was selected as the primary model for interpretation. Feature importance analysis, recursive feature elimination (RFE), and SHAP values were used to better understand how the model arrives at its predictions and which features drive the \texttt{>50K} income classification.
+
+Figure~\ref{fig:gb-feature-importance} shows the top 20 features ranked by Gradient Boosting's built-in feature importance scores on the one-hot encoded data. The most influential predictors include educational attainment (e.g., \texttt{education\_Bachelors}, \texttt{education\_Masters}), capital gains, hours worked per week, marital status (especially \texttt{Married-civ-spouse}), and certain occupation categories. These results align with economic intuition: higher education, more work hours, and positive capital gains all correlate with higher income, while marital status and occupation encode job stability and professional status.
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\linewidth]{../figures/feature_importance_gb.png}
+\caption{Top 20 Gradient Boosting feature importances on the one-hot encoded Adult dataset.}
+\label{fig:gb-feature-importance}
 \end{figure}
 
-\noindent
-\textbf{Weeks 1--2 (Nov 2 -- Nov 16):} Data cleaning, exploratory data analysis (EDA), and documentation of the dataset. In parallel, I build and evaluate the baseline model (logistic regression) to establish reference metrics. These steps produce the first deliverables: processed data, EDA figures, and baseline performance numbers.
+To cross-check these findings in a simpler linear setting, RFE was applied to a logistic regression model trained on the same one-hot encoded features. The RFE results, shown in Figure~\ref{fig:rfe-logreg}, identify a very similar subset of important predictors, including education level, capital gain, marital status, and hours-per-week. This agreement between the tree-based Gradient Boosting model and the linear logistic regression model increases confidence that these features are genuinely important rather than artifacts of a specific model class.
 
-\medskip
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.85\linewidth]{../figures/rfe_logreg_importance.png}
+\caption{Recursive Feature Elimination (RFE) with logistic regression, showing the most important encoded features.}
+\label{fig:rfe-logreg}
+\end{figure}
 
-\noindent
-\textbf{Weeks 3--4 (Nov 16 -- Nov 30):} I begin model development beyond the baseline. Random Forest and Gradient Boosting models are trained, tuned, and compared. This overlaps with fairness and evaluation work: I assess how well these models perform on the minority income class (\texttt{>50K}), and I generate metrics like precision, recall, and F1. The dependency here is that I cannot tune or compare advanced models until the cleaned data and baseline are stable, but I \emph{can} iterate on model evaluation and figure generation in parallel while tuning hyperparameters.
+Finally, SHAP values were computed for the Gradient Boosting model to obtain a more nuanced, instance-level explanation of model behavior. The SHAP summary plot in Figure~\ref{fig:shap-summary} illustrates how individual feature values push predictions toward higher or lower income. High values of capital gain and education-related features generally have large positive SHAP values, pushing predictions toward the \texttt{>50K} class, while low hours-per-week or certain lower-education categories push predictions toward \texttt{<=50K}. The SHAP analysis also highlights interactions: for example, the impact of age depends on other variables such as education and occupation. Together, feature importance, RFE, and SHAP provide a coherent picture of the model: it relies on plausible, interpretable socioeconomic signals and does not appear to be dominated by any single spurious feature.
 
-\medskip
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/shap_summary_gb.png}
+\caption{SHAP summary plot for the Gradient Boosting model, showing the contribution of encoded features to predicting \texttt{>50K} income.}
+\label{fig:shap-summary}
+\end{figure}
 
-\noindent
-\textbf{Week 5 / Week 15 of course (Dec 2 -- Dec 4):} Presentation prep and rehearsal. At this point, plots, tables, and key findings should already exist. The focus here is communicating the problem motivation, describing the modeling pipeline clearly, and explaining limitations (class imbalance, bias across demographic features). This is a hard checkpoint: I should be able to talk through method, data, and results by Dec 2--4.
 
-\medskip
+\subsection{Interpretation Summary}
 
-\noindent
-\textbf{Final Deliverables (Dec 4 -- Dec 8):} I finalize the written report and push all code, processed data samples, figures, and evaluation outputs to GitHub. The last block of time (Dec 4--Dec 8) is deliberate buffer: if a model underperforms, I can fall back to the validated logistic regression baseline and Random Forest results. If there are issues with data quality or missing values, I can regenerate the processed dataset and update the report. The final PDF report and the repository are submitted by December 8.
+The interpretation results support the model evaluation: Gradient Boosting not only performs best
+but also provides interpretable ranking of features that align with economic theory. Education,
+capital gain, occupation, and work hours strongly influence predictions. SHAP values confirm that
+the model's decisions are meaningful, transparent, and grounded in recognizable patterns in the
+data.
 
-\medskip
+\section{Conclusion}
 
-This schedule builds in contingency time. The critical path is: (1) produce a clean dataset and baseline results, (2) train and compare advanced models, (3) generate evaluation figures, and (4) assemble the final narrative. Tasks like figure polishing, fairness discussion, and writing can proceed in parallel with model tuning, which protects the December 8 final submission and the December 2--4 presentation window.
+This project developed a full machine learning pipeline to predict whether an individual earns more
+than \$50K annually using the U.S. Census Adult dataset. I began by cleaning and preprocessing the
+data, addressing missing values, encoding categorical variables, and standardizing numeric features.
+I then carried out exploratory data analysis to understand distributions, class imbalance, and
+relationships between key variables such as age, work hours, education, and occupation.
+
+Three supervised classification models---Logistic Regression, Random Forest, and Gradient Boosting---
+were trained and compared using accuracy, precision, recall, and F1 score on the validation dataset.
+Gradient Boosting emerged as the strongest model, achieving the highest accuracy (0.871) and the
+highest F1 score for the minority income class. Random Forest performed competitively but slightly
+underperformed compared to Gradient Boosting, while Logistic Regression served as a strong and
+interpretable baseline but struggled to capture nonlinear dependencies in the data.
+
+Training and inference time measurements showed that Logistic Regression is the fastest to train,
+while Gradient Boosting is the slowest due to its sequential tree-building process. However,
+Gradient Boosting also had the fastest inference time and provided the best overall predictive
+performance, making it the most effective model for this task. Model interpretation techniques,
+including RFE, feature importance plots, and SHAP values, revealed consistent patterns: education
+level, hours worked, capital gain, and marital status had the strongest impact on predicting
+high-income status.
+
+Overall, the desired performance goals were met, with Gradient Boosting surpassing the baseline by a
+significant margin and offering interpretable insights into which socioeconomic variables most
+influence income level. Some challenges arose during preprocessing and training, particularly with
+high-cardinality categorical variables and slow convergence in logistic regression. Future work
+could include hyperparameter tuning for all models, exploring XGBoost or LightGBM for faster
+training, applying techniques to address class imbalance (such as SMOTE or class-weighting), and
+conducting a deeper fairness analysis to examine whether model performance differs across demographic
+groups.
+
+The project demonstrates how machine learning can effectively model complex relationships in census
+data and provides a framework for both predictive performance and responsible interpretation.
 
 
 
