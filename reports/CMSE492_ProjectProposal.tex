@@ -367,8 +367,7 @@ Random Forest       & 1.05 & 79.35 \\
 Gradient Boosting   & 8.09 & 4.82 \\
 \bottomrule
 \end{tabular}
-\caption{Training and inference times for each model. (Values depend on hardware; placeholders
-will be replaced with measured results.)}
+\caption{Training and inference times for each model. (Values depend on hardware.)}
 \label{tab:time-comparison}
 \end{table}
 
@@ -430,8 +429,7 @@ is more effective at distinguishing high-income individuals without overpredicti
 Considering both predictive performance and computational resources, Gradient Boosting is the best
 overall model for this task. It produces the highest accuracy and F1 score for the minority class,
 demonstrates strong generalization, and has extremely fast inference time. Although it is slower to
-train, the gain in predictive quality justifies the additional cost, especially for offline
-training scenarios.
+train, the gain in predictive quality justifies the additional cost.
 
 Random Forest serves as a strong secondary model with reasonable interpretability and robustness,
 while logistic regression remains a valuable baseline due to its simplicity and transparency.
@@ -501,7 +499,7 @@ Overall, the desired performance goals were met, with Gradient Boosting surpassi
 significant margin and offering interpretable insights into which socioeconomic variables most
 influence income level. Some challenges arose during preprocessing and training, particularly with
 high-cardinality categorical variables and slow convergence in logistic regression. Future work
-could include hyperparameter tuning for all models, exploring XGBoost or LightGBM for faster
+could include hyperparameter tuning for all models, exploring XGBoost for faster
 training, applying techniques to address class imbalance (such as SMOTE or class-weighting), and
 conducting a deeper fairness analysis to examine whether model performance differs across demographic
 groups.
