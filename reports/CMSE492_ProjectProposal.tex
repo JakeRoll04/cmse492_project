@@ -7,6 +7,7 @@
 \usepackage{titlesec}
 \usepackage{hyperref}
 \usepackage{float}
+\usepackage{amsmath}
 \usepackage[section]{placeins}
 
 
@@ -24,7 +25,7 @@
 \end{center}
 
 \section*{Abstract}
-This project aims to predict whether an individual earns more than \$50{,}000 annually using demographic and occupational data from the U.S. Census Bureau's Adult Income dataset. By applying modern machine learning methods, the study seeks to identify key socioeconomic features influencing income levels. The analysis begins with data cleaning, exploratory visualization, and feature correlation analysis, followed by the development of baseline and advanced classification models. a baseline Logistic regression has been completed, while random forest and gradient boosting will be used in the future to compare in terms of predictive accuracy and interpretability. Model performance is evaluated using accuracy, precision, recall, and F1-score. The results will provide insight into demographic and economic disparities while serving as a case study for data preprocessing, model tuning, and evaluation in applied ML workflows.
+This project aims to predict whether an individual earns more than \$50{,}000 annually using demographic and occupational data from the U.S. Census Bureau's Adult Income dataset. By applying modern machine learning methods, the study seeks to identify key socioeconomic features influencing income levels. The analysis begins with data cleaning, exploratory visualization, and feature correlation analysis, followed by the development of baseline and advanced classification models. A baseline Logistic regression has been completed, while random forest and gradient boosting will be used in the future to compare in terms of predictive accuracy and interpretability. Model performance is evaluated using accuracy, precision, recall, and F1-score. The results will provide insight into demographic and economic disparities while serving as a case study for data preprocessing, model tuning, and evaluation in applied ML workflows.
 
 \section{Background and Motivation}
 Income inequality remains a central topic in social and economic research. Predicting income brackets from census data highlights structural relationships between education, occupation, and demographic variables. Prior studies on the UCI Adult dataset show that while linear models achieve moderate accuracy, ensemble methods often perform better by capturing nonlinear dependencies. This project combines statistical rigor with interpretability to showcase responsible machine learning. This problem is important because income level is strongly tied to access to healthcare, housing stability, educational opportunities, and long-term economic mobility. Understanding which socioeconomic factors predict higher income can support policymakers, nonprofits, and labor economists in identifying structural inequalities and potential intervention points. Organizations concerned with economic justice and social mobility care deeply about improving predictive tools that reveal disparities in opportunity.
@@ -99,9 +100,9 @@ The study follows a supervised classification pipeline:
 \begin{enumerate}
     \item \textbf{Baseline:} Logistic Regression for interpretability.
     \item \textbf{Intermediate:} Random Forest to capture nonlinear relationships.
-    \item \textbf{Advanced:} Gradient Boosting (XGBoost) for optimized accuracy.
+    \item \textbf{Advanced:} Gradient Boosting for optimized accuracy.
 \end{enumerate}
-Each model is trained using stratified train/validation/test splits. Hyperparameter tuning uses 5-fold cross-validation. Feature importance and confusion matrices are used to interpret performance.
+Each model is trained using stratified train/validation/test splits. Hyperparameter tuning uses a validation set (and could be extended to 5-fold CV). Feature importance and confusion matrices are used to interpret performance.
 
 
 \section{Machine Learning Task and Objective}
@@ -199,7 +200,7 @@ Shrinkage, depth limits \\
 
 \section{Training Methodology}
 
-All models are trained using a stratified 70/10/20 train--validation--test split to ensure that both
+All models are trained using a stratified 70/10/20 train/validation/test split to ensure that both
 income classes are represented proportionally. Before training, continuous variables are standardized
 and categorical variables are one-hot encoded. This preprocessing is applied consistently across all
 three models using a \texttt{ColumnTransformer} pipeline.
@@ -231,6 +232,33 @@ Model performance is monitored using:
 Tree-based models use implicit regularization via depth limits, shrinkage, and ensemble averaging.
 Logistic regression uses L2 penalties to control weight growth.
 
+\subsection{Hyperparameter Tuning and Learning Curves}
+
+To avoid overfitting and select reasonable hyperparameters, I performed lightweight tuning using the
+validation set rather than an exhaustive grid search. For the Gradient Boosting model, I varied the
+number of boosting stages $n_{\text{estimators}} \in \{50, 100, 150, 200, 250\}$ while keeping the
+learning rate fixed at 0.1 and the maximum tree depth at 3. For each setting I measured training and
+validation accuracy on the encoded data.
+
+Figure 3 shows the learning curve for Gradient Boosting. Training accuracy
+increases monotonically as the number of trees grows, while validation accuracy plateaus around
+$n_{\text{estimators}} = 200$. Beyond this point, additional trees slightly increase training
+accuracy but do not improve validation accuracy, indicating the onset of overfitting. Based on this
+trend, I chose $n_{\text{estimators}} = 200$ as a good trade-off between model complexity,
+generalization, and computational cost.
+
+For Logistic Regression, I increased \texttt{max\_iter} to 1000 to resolve convergence warnings
+without changing the underlying decision boundary. For Random Forest, I verified that increasing the
+number of trees beyond 200 provided negligible improvement in validation accuracy, so $n_{\text{estimators}}=200$
+was retained as a stable default.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\linewidth]{../figures/learning_curve_gb.png}
+\caption{Gradient Boosting learning curve showing training and validation accuracy as a function of the number of boosting stages.}
+\label{fig:gb-learning-curve}
+\end{figure}
+
 \subsection{Hyperparameter Tuning}
 
 Initial hyperparameter choices follow standard best practices:
@@ -246,8 +274,8 @@ already achieved strong performance relative to baselines.
 \section{Evaluation Metrics}
 
 To evaluate model performance on the Adult Income classification task, I use four primary metrics:
-accuracy, precision, recall, and F1 score. Because the dataset is imbalanced---with the majority
-of individuals earning \texttt{<=50K} and a smaller minority earning \texttt{>50K}---accuracy
+accuracy, precision, recall, and F1 score. Because the dataset is imbalanced with the majority
+of individuals earning \texttt{<=50K} and a smaller minority earning \texttt{>50K}, accuracy
 alone would be misleading. A classifier could predict the majority class for every example and
 still achieve over 75\% accuracy without learning anything meaningful. For this reason, additional
 metrics that focus on the minority class are required.
@@ -286,15 +314,15 @@ compare models in this study.
 
 \section{Results and Model Comparison}
 
-This section compares the three models---Logistic Regression, Random Forest, and Gradient
-Boosting---using the metrics defined earlier. I evaluate each model on the validation split
+This section compares the three models: Logistic Regression, Random Forest, and Gradient
+Boosting, using the metrics defined earlier. I evaluate each model on the validation split
 using accuracy, precision, recall, and F1 score. In addition to predictive performance,
 I compare models by their computational cost (training time and inference speed) and discuss
 which algorithm is best suited to the task.
 
 \subsection{Model Performance}
 
-Table~\ref{tab:metric-comparison} summarizes the validation performance for the three models.
+Table 2 summarizes the validation performance for the three models.
 Gradient Boosting achieves the highest overall accuracy (0.871) and the strongest F1 score on the
 minority class (0.70). Random Forest provides competitive performance with improved recall over
 logistic regression, while logistic regression serves as a strong, interpretable baseline.
@@ -323,7 +351,7 @@ features such as education, age, and occupation.
 \subsection{Training and Inference Time}
 
 To evaluate practical considerations, I recorded the training and inference time for each model
-(Table~\ref{tab:time-comparison}). Logistic regression trains almost instantly, making it suitable
+(Table 3). Logistic regression trains almost instantly, making it suitable
 for very large datasets or real-time systems. Random Forest requires more computation due to
 constructing many parallel trees, while Gradient Boosting is the slowest because trees are trained
 sequentially. Despite this, Gradient Boosting remains computationally feasible for the dataset size.
@@ -348,6 +376,27 @@ Logistic regression and random forest both train quickly (around 1 second), whil
 Boosting requires substantially more time (over 8 seconds) due to its sequential boosting process.
 However, Gradient Boosting has the fastest inference time, since prediction only requires passing
 an input through a series of shallow trees.
+
+\subsection{Error Analysis}
+
+To better understand the types of mistakes made by the best model, I computed a confusion matrix for
+the Gradient Boosting classifier on the held-out test set (Figure 4).
+The model correctly identifies most \texttt{<=50K} examples, but it still misclassifies a noticeable
+fraction of high-income individuals as \texttt{<=50K}. This behavior explains why recall for the
+positive class remains lower than precision: the model is conservative in predicting \texttt{>50K},
+preferring to avoid false positives at the cost of some false negatives.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.55\linewidth]{../figures/confusion_matrix_gb.png}
+\caption{Confusion matrix for the Gradient Boosting model on the test set.}
+\label{fig:gb-confusion-matrix}
+\end{figure}
+
+This analysis highlights an important limitation: although the overall accuracy and F1 score are
+high, the model is more likely to underpredict high-income individuals than to overpredict them.
+Future work could incorporate class-weighting or cost-sensitive learning to increase recall on the
+\texttt{>50K} class if missing high-income cases is considered especially costly.
 
 \subsection{Why the Models Perform Differently}
 
@@ -391,7 +440,7 @@ while logistic regression remains a valuable baseline due to its simplicity and 
 
 Given its superior performance, the Gradient Boosting classifier was selected as the primary model for interpretation. Feature importance analysis, recursive feature elimination (RFE), and SHAP values were used to better understand how the model arrives at its predictions and which features drive the \texttt{>50K} income classification.
 
-Figure~\ref{fig:gb-feature-importance} shows the top 20 features ranked by Gradient Boosting's built-in feature importance scores on the one-hot encoded data. The most influential predictors include educational attainment (e.g., \texttt{education\_Bachelors}, \texttt{education\_Masters}), capital gains, hours worked per week, marital status (especially \texttt{Married-civ-spouse}), and certain occupation categories. These results align with economic intuition: higher education, more work hours, and positive capital gains all correlate with higher income, while marital status and occupation encode job stability and professional status.
+Figure 5 shows the top 20 features ranked by Gradient Boosting's built-in feature importance scores on the one-hot encoded data. The most influential predictors include educational attainment (e.g., \texttt{education\_Bachelors}, \texttt{education\_Masters}), capital gains, hours worked per week, marital status (especially \texttt{Married-civ-spouse}), and certain occupation categories. These results align with economic intuition: higher education, more work hours, and positive capital gains all correlate with higher income, while marital status and occupation encode job stability and professional status.
 
 \begin{figure}[h!]
 \centering
@@ -400,7 +449,7 @@ Figure~\ref{fig:gb-feature-importance} shows the top 20 features ranked by Gradi
 \label{fig:gb-feature-importance}
 \end{figure}
 
-To cross-check these findings in a simpler linear setting, RFE was applied to a logistic regression model trained on the same one-hot encoded features. The RFE results, shown in Figure~\ref{fig:rfe-logreg}, identify a very similar subset of important predictors, including education level, capital gain, marital status, and hours-per-week. This agreement between the tree-based Gradient Boosting model and the linear logistic regression model increases confidence that these features are genuinely important rather than artifacts of a specific model class.
+To cross-check these findings in a simpler linear setting, RFE was applied to a logistic regression model trained on the same one-hot encoded features. The RFE results, shown in Figure 6, identify a very similar subset of important predictors, including education level, capital gain, marital status, and hours-per-week. This agreement between the tree-based Gradient Boosting model and the linear logistic regression model increases confidence that these features are genuinely important rather than artifacts of a specific model class.
 
 \begin{figure}[h!]
 \centering
@@ -409,7 +458,7 @@ To cross-check these findings in a simpler linear setting, RFE was applied to a 
 \label{fig:rfe-logreg}
 \end{figure}
 
-Finally, SHAP values were computed for the Gradient Boosting model to obtain a more nuanced, instance-level explanation of model behavior. The SHAP summary plot in Figure~\ref{fig:shap-summary} illustrates how individual feature values push predictions toward higher or lower income. High values of capital gain and education-related features generally have large positive SHAP values, pushing predictions toward the \texttt{>50K} class, while low hours-per-week or certain lower-education categories push predictions toward \texttt{<=50K}. The SHAP analysis also highlights interactions: for example, the impact of age depends on other variables such as education and occupation. Together, feature importance, RFE, and SHAP provide a coherent picture of the model: it relies on plausible, interpretable socioeconomic signals and does not appear to be dominated by any single spurious feature.
+Finally, SHAP values were computed for the Gradient Boosting model to obtain a more nuanced, instance-level explanation of model behavior. The SHAP summary plot in Figure 7 illustrates how individual feature values push predictions toward higher or lower income. High values of capital gain and education-related features generally have large positive SHAP values, pushing predictions toward the \texttt{>50K} class, while low hours-per-week or certain lower-education categories push predictions toward \texttt{<=50K}. The SHAP analysis also highlights interactions: for example, the impact of age depends on other variables such as education and occupation. Together, feature importance, RFE, and SHAP provide a coherent picture of the model: it relies on plausible, interpretable socioeconomic signals and does not appear to be dominated by any single spurious feature.
 
 \begin{figure}[h!]
 \centering
@@ -435,9 +484,7 @@ data, addressing missing values, encoding categorical variables, and standardizi
 I then carried out exploratory data analysis to understand distributions, class imbalance, and
 relationships between key variables such as age, work hours, education, and occupation.
 
-Three supervised classification models---Logistic Regression, Random Forest, and Gradient Boosting---
-were trained and compared using accuracy, precision, recall, and F1 score on the validation dataset.
-Gradient Boosting emerged as the strongest model, achieving the highest accuracy (0.871) and the
+Three supervised classification models: Logistic Regression, Random Forest, and Gradient Boosting were trained and compared using accuracy, precision, recall, and F1 score on the validation dataset. Gradient Boosting emerged as the strongest model, achieving the highest accuracy (0.871) and the
 highest F1 score for the minority income class. Random Forest performed competitively but slightly
 underperformed compared to Gradient Boosting, while Logistic Regression served as a strong and
 interpretable baseline but struggled to capture nonlinear dependencies in the data.
