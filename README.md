@@ -21,6 +21,7 @@ cmse492_project/
 ├── docs/                   # notes, references
 └── reports/                # LaTeX project proposal and final report
 
+
 ## Setup Instructions
 
 ### 1. Clone the repository
