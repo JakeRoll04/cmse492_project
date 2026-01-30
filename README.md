@@ -72,6 +72,9 @@ https://archive.ics.uci.edu/dataset/2/adult
 ### Download Raw Data
 ```bash
 curl -L -o data/raw/adult.data https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
+
+If Encountering Error on Powershell, Try:
+curl.exe -L -o data\raw\adult.data https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data
 ```
 
 ---
